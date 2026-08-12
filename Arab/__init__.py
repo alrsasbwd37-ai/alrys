@@ -1,7 +1,40 @@
 import time
 import heroku3
 
-from .Config import Config
+# ===== تصحيح استيراد Config =====
+try:
+    from .Config.iqthon_config import Config
+except ImportError:
+    # إذا فشل الاستيراد، استخدم Config من sys.modules
+    import sys
+    Config = sys.modules.get('Arab.Config', None)
+    if Config is None:
+        # إنشاء Config افتراضي
+        import os
+        class Config:
+            BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+            SESSION_NAME = os.environ.get("SESSION_NAME", "")
+            API_ID = int(os.environ.get("API_ID", 0))
+            API_HASH = os.environ.get("API_HASH", "")
+            RANDOM_STUFF_API_KEY = os.environ.get("RANDOM_STUFF_API_KEY", "")
+            LOG_GROUP = os.environ.get("LOG_GROUP", None)
+            DATABASE_URL = os.environ.get("DATABASE_URL", None)
+            COMMAND_HANDLER = os.environ.get("COMMAND_HANDLER", ".")
+            SUDO_USERS = list(map(int, os.environ.get("SUDO_USERS", "").split()))
+            OWNER_ID = int(os.environ.get("OWNER_ID", 0))
+            OPENWEATHERMAP_API_KEY = os.environ.get("OPENWEATHERMAP_API_KEY", "")
+            GITHUB_ACCESS_TOKEN = os.environ.get("GITHUB_ACCESS_TOKEN", "")
+            DB_URI = os.environ.get("DATABASE_URL", None)
+            REDIS_URI = os.environ.get("REDIS_URI", None)
+            PRIVATE_GROUP_BOT_API_ID = int(os.environ.get("PRIVATE_GROUP_BOT_API_ID", 0))
+            PM_LOGGER_GROUP_ID = int(os.environ.get("PM_LOGGER_GROUP_ID", 0))
+            HEROKU_API_KEY = os.environ.get("HEROKU_API_KEY", None)
+            HEROKU_APP_NAME = os.environ.get("HEROKU_APP_NAME", None)
+            UPSTREAM_REPO = os.environ.get("UPSTREAM_REPO", "TelethonAr")
+            BOTLOG = False
+            BOTLOG_CHATID = "me"
+# =====================================
+
 from .core.logger import logging
 from .core.session import iqthon
 from .sql_helper.globals import addgvar, delgvar, gvarstatus
