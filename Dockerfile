@@ -9,7 +9,7 @@ WORKDIR /root/Arab
 # ===== تثبيت المتطلبات =====
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-# ===== إنشاء Config مباشرة في الملف الصحيح =====
+# ===== إنشاء Config مباشرة =====
 RUN mkdir -p /root/Arab/Arab/Config && \
     echo 'import os' > /root/Arab/Arab/Config/iqthon_config.py && \
     echo '' >> /root/Arab/Arab/Config/iqthon_config.py && \
@@ -68,10 +68,6 @@ RUN echo 'import os' > /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
     echo 'sys.path.insert(0, "/root/Arab")' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
-    echo 'os.environ["BOT_TOKEN"] = os.environ.get("BOT_TOKEN", "your_bot_token_here")' >> /root/Arab/run.py && \
-    echo 'os.environ["API_ID"] = os.environ.get("API_ID", "32419741")' >> /root/Arab/run.py && \
-    echo 'os.environ["API_HASH"] = os.environ.get("API_HASH", "3b646239045f6be4d40498726b00b414")' >> /root/Arab/run.py && \
-    echo '' >> /root/Arab/run.py && \
     echo 'print("[INFO] 🚀 جاري تهيئة البيئة...")' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
     echo 'try:' >> /root/Arab/run.py && \
@@ -80,13 +76,18 @@ RUN echo 'import os' > /root/Arab/run.py && \
     echo '    asyncio.set_event_loop(asyncio.new_event_loop())' >> /root/Arab/run.py && \
     echo '    print("[INFO] تم إنشاء event loop جديد")' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
-    echo 'if os.environ.get("BOT_TOKEN"):' >> /root/Arab/run.py && \
+    echo '# قراءة BOT_TOKEN من البيئة' >> /root/Arab/run.py && \
+    echo 'BOT_TOKEN = os.environ.get("BOT_TOKEN")' >> /root/Arab/run.py && \
+    echo 'API_ID = os.environ.get("API_ID")' >> /root/Arab/run.py && \
+    echo 'API_HASH = os.environ.get("API_HASH")' >> /root/Arab/run.py && \
+    echo '' >> /root/Arab/run.py && \
+    echo 'if BOT_TOKEN:' >> /root/Arab/run.py && \
     echo '    print("[INFO] ✅ سيتم التشغيل باستخدام BOT_TOKEN")' >> /root/Arab/run.py && \
     echo 'else:' >> /root/Arab/run.py && \
     echo '    print("[ERROR] ❌ BOT_TOKEN غير موجود!")' >> /root/Arab/run.py && \
     echo '    sys.exit(1)' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
-    echo '# إنشاء Config مباشرة وتجاوز الاستيراد' >> /root/Arab/run.py && \
+    echo '# إنشاء Config مباشرة' >> /root/Arab/run.py && \
     echo 'class Config:' >> /root/Arab/run.py && \
     echo '    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")' >> /root/Arab/run.py && \
     echo '    SESSION_NAME = os.environ.get("SESSION_NAME", "")' >> /root/Arab/run.py && \
@@ -99,10 +100,10 @@ RUN echo 'import os' > /root/Arab/run.py && \
     echo '    SUDO_USERS = list(map(int, os.environ.get("SUDO_USERS", "").split()))' >> /root/Arab/run.py && \
     echo '    OWNER_ID = int(os.environ.get("OWNER_ID", 0))' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
-    echo 'import sys' >> /root/Arab/run.py && \
     echo 'sys.modules["Arab.Config"] = Config' >> /root/Arab/run.py && \
     echo 'sys.modules["Arab.Config.iqthon_config"] = Config' >> /root/Arab/run.py && \
     echo 'sys.modules["sample_config"] = Config' >> /root/Arab/run.py && \
+    echo 'sys.modules["Config"] = Config' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
     echo 'import Arab' >> /root/Arab/run.py && \
     echo 'Arab.Config = Config' >> /root/Arab/run.py && \
@@ -118,6 +119,12 @@ RUN echo 'import os' > /root/Arab/run.py && \
     echo '    import traceback' >> /root/Arab/run.py && \
     echo '    traceback.print_exc()' >> /root/Arab/run.py && \
     echo '    sys.exit(1)' >> /root/Arab/run.py
+
+# ===== إصلاح Arab/__init__.py لمنع ImportError =====
+RUN echo 'from .Config.iqthon_config import Config' > /root/Arab/Arab/__init__.py && \
+    echo '' >> /root/Arab/Arab/__init__.py && \
+    echo '# باقي محتوى الملف الأصلي' >> /root/Arab/Arab/__init__.py && \
+    echo 'from .core.session import iqthon' >> /root/Arab/Arab/__init__.py
 
 ENV PATH="/home/Arab/bin:$PATH"
 
