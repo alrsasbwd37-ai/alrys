@@ -50,7 +50,7 @@ RUN echo 'from .utils.extdl import install_pip' > /root/Arab/Arab/helpers/chatbo
     echo '    install_pip("randomstuff")' >> /root/Arab/Arab/helpers/chatbot.py && \
     echo '    import randomstuff' >> /root/Arab/Arab/helpers/chatbot.py && \
     echo '' >> /root/Arab/Arab/helpers/chatbot.py && \
-    echo 'from ..Config import Config' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo 'from Arab.Config.iqthon_config import Config' >> /root/Arab/Arab/helpers/chatbot.py && \
     echo '' >> /root/Arab/Arab/helpers/chatbot.py && \
     echo '_rs_client = None' >> /root/Arab/Arab/helpers/chatbot.py && \
     echo '' >> /root/Arab/Arab/helpers/chatbot.py && \
@@ -68,7 +68,7 @@ RUN echo 'from .utils.extdl import install_pip' > /root/Arab/Arab/helpers/chatbo
     echo '            _rs_client = None' >> /root/Arab/Arab/helpers/chatbot.py && \
     echo '    return _rs_client' >> /root/Arab/Arab/helpers/chatbot.py
 
-# ===== إنشاء run.py المعدل بالكامل =====
+# ===== إنشاء run.py =====
 RUN echo 'import os' > /root/Arab/run.py && \
     echo 'import asyncio' >> /root/Arab/run.py && \
     echo 'import sys' >> /root/Arab/run.py && \
@@ -140,7 +140,7 @@ RUN echo 'import os' > /root/Arab/run.py && \
     echo '    traceback.print_exc()' >> /root/Arab/run.py && \
     echo '    sys.exit(1)' >> /root/Arab/run.py
 
-# ===== إصلاح Arab/__init__.py بالكامل =====
+# ===== إصلاح Arab/__init__.py =====
 RUN cat > /root/Arab/Arab/__init__.py << 'EOF'
 import time
 import heroku3
@@ -249,6 +249,12 @@ BOTLOG = Config.BOTLOG
 BOTLOG_CHATID = Config.BOTLOG_CHATID
 PM_LOGGER_GROUP_ID = Config.PM_LOGGER_GROUP_ID
 EOF
+
+# ===== إصلاح جميع ملفات core التي تستورد Config =====
+RUN find /root/Arab/Arab/core -name "*.py" -exec sed -i 's/from ..Config import Config/from Arab.Config.iqthon_config import Config/g' {} \;
+
+# ===== إصلاح جميع ملفات helpers التي تستورد Config =====
+RUN find /root/Arab/Arab/helpers -name "*.py" -exec sed -i 's/from ..Config import Config/from Arab.Config.iqthon_config import Config/g' {} \;
 
 ENV PATH="/home/Arab/bin:$PATH"
 
