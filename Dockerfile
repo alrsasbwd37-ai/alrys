@@ -68,7 +68,7 @@ RUN echo 'from .utils.extdl import install_pip' > /root/Arab/Arab/helpers/chatbo
     echo '            _rs_client = None' >> /root/Arab/Arab/helpers/chatbot.py && \
     echo '    return _rs_client' >> /root/Arab/Arab/helpers/chatbot.py
 
-# ===== إنشاء run.py =====
+# ===== إنشاء run.py مع ترتيب صحيح للاستيراد =====
 RUN echo 'import os' > /root/Arab/run.py && \
     echo 'import asyncio' >> /root/Arab/run.py && \
     echo 'import sys' >> /root/Arab/run.py && \
@@ -94,7 +94,7 @@ RUN echo 'import os' > /root/Arab/run.py && \
     echo '    print("[ERROR] ❌ BOT_TOKEN غير موجود!")' >> /root/Arab/run.py && \
     echo '    sys.exit(1)' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
-    echo '# إنشاء Config مباشرة مع جميع المتغيرات' >> /root/Arab/run.py && \
+    echo '# إنشاء Config مباشرة' >> /root/Arab/run.py && \
     echo 'class Config:' >> /root/Arab/run.py && \
     echo '    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")' >> /root/Arab/run.py && \
     echo '    SESSION_NAME = os.environ.get("SESSION_NAME", "")' >> /root/Arab/run.py && \
@@ -118,15 +118,14 @@ RUN echo 'import os' > /root/Arab/run.py && \
     echo '    BOTLOG = False' >> /root/Arab/run.py && \
     echo '    BOTLOG_CHATID = "me"' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
-    echo '# حقن Config في جميع مسارات الاستيراد' >> /root/Arab/run.py && \
-    echo 'sys.modules["Arab.Config"] = Config' >> /root/Arab/run.py && \
-    echo 'sys.modules["Arab.Config.iqthon_config"] = Config' >> /root/Arab/run.py && \
-    echo 'sys.modules["sample_config"] = Config' >> /root/Arab/run.py && \
-    echo 'sys.modules["Config"] = Config' >> /root/Arab/run.py && \
-    echo '' >> /root/Arab/run.py && \
-    echo '# استيراد Arab وتعيين Config' >> /root/Arab/run.py && \
-    echo 'import Arab' >> /root/Arab/run.py && \
-    echo 'Arab.Config = Config' >> /root/Arab/run.py && \
+    echo '# ===== إنشاء وحدة Config في sys.modules =====' >> /root/Arab/run.py && \
+    echo 'import types' >> /root/Arab/run.py && \
+    echo 'config_module = types.ModuleType("Arab.Config")' >> /root/Arab/run.py && \
+    echo 'config_module.Config = Config' >> /root/Arab/run.py && \
+    echo 'sys.modules["Arab.Config"] = config_module' >> /root/Arab/run.py && \
+    echo 'sys.modules["Arab.Config.iqthon_config"] = config_module' >> /root/Arab/run.py && \
+    echo 'sys.modules["sample_config"] = config_module' >> /root/Arab/run.py && \
+    echo 'sys.modules["Config"] = config_module' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
     echo 'print("[INFO] ✅ تم إعداد Config بنجاح")' >> /root/Arab/run.py && \
     echo 'print("[INFO] 🚀 جاري تشغيل Arab...")' >> /root/Arab/run.py && \
@@ -144,13 +143,18 @@ RUN echo 'import os' > /root/Arab/run.py && \
 RUN cat > /root/Arab/Arab/__init__.py << 'EOF'
 import time
 import heroku3
+import sys
 
+# محاولة استيراد Config من المسار الصحيح
 try:
-    from .Config.iqthon_config import Config
+    from Arab.Config.iqthon_config import Config
 except ImportError:
-    import sys
+    # إذا فشل، حاول من sys.modules
     Config = sys.modules.get('Arab.Config', None)
     if Config is None:
+        Config = sys.modules.get('Config', None)
+    if Config is None:
+        # إنشاء Config افتراضي
         import os
         class Config:
             BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
@@ -250,10 +254,8 @@ BOTLOG_CHATID = Config.BOTLOG_CHATID
 PM_LOGGER_GROUP_ID = Config.PM_LOGGER_GROUP_ID
 EOF
 
-# ===== إصلاح جميع ملفات core التي تستورد Config =====
+# ===== إصلاح جميع ملفات core و helpers =====
 RUN find /root/Arab/Arab/core -name "*.py" -exec sed -i 's/from ..Config import Config/from Arab.Config.iqthon_config import Config/g' {} \;
-
-# ===== إصلاح جميع ملفات helpers التي تستورد Config =====
 RUN find /root/Arab/Arab/helpers -name "*.py" -exec sed -i 's/from ..Config import Config/from Arab.Config.iqthon_config import Config/g' {} \;
 
 ENV PATH="/home/Arab/bin:$PATH"
