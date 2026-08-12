@@ -8,9 +8,6 @@ WORKDIR /root/Arab
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# تصحيح: اسم الحزمة الصحيح هو randomstuff (بدون .py)
-RUN pip install randomstuff
-
 # إنشاء Config
 RUN mkdir -p /root/Arab/Arab/Config && \
 cat > /root/Arab/Arab/Config/iqthon_config.py <<'EOF'
@@ -66,14 +63,12 @@ class Config:
     BOTLOG_CHATID = "me"
 EOF
 
+# Config/__init__.py
 RUN echo "from .iqthon_config import Config" > /root/Arab/Arab/Config/__init__.py
 
-# إصلاح الاستيرادات في core و helpers
-RUN find /root/Arab/Arab/core -name "*.py" \
--exec sed -i 's/from \.\.Config import Config/from Arab.Config.iqthon_config import Config/g' {} \;
-
-RUN find /root/Arab/Arab/helpers -name "*.py" \
--exec sed -i 's/from \.\.Config import Config/from Arab.Config.iqthon_config import Config/g' {} \;
+# إصلاح الاستيرادات - استخدام Arab.Config بدلاً من Arab.Config.iqthon_config
+RUN find /root/Arab/Arab -name "*.py" \
+-exec sed -i 's/from \.\.Config import Config/from Arab.Config import Config/g' {} \;
 
 # إصلاح session.py
 RUN sed -i 's/Config.API_ID/Config.APP_ID/g' /root/Arab/Arab/core/session.py || true
@@ -183,12 +178,8 @@ EOF
 
 # إصلاح chatbot.py
 RUN cat > /root/Arab/Arab/helpers/chatbot.py <<'EOF'
-try:
-    import randomstuff
-except ModuleNotFoundError:
-    import randomstuff
-
-from Arab.Config.iqthon_config import Config
+import randomstuff
+from Arab.Config import Config
 
 _rs_client = None
 
@@ -207,7 +198,7 @@ async def get_rs_client():
     return _rs_client
 EOF
 
-# إصلاح helpers/__init__.py - نسخة آمنة بدون install_pip
+# إصلاح helpers/__init__.py
 RUN cat > /root/Arab/Arab/helpers/__init__.py <<'EOF'
 from . import fonts
 from . import memeshelper as catmemes
@@ -232,7 +223,7 @@ import heroku3
 import sys
 
 try:
-    from .Config.iqthon_config import Config
+    from .Config import Config
 except ImportError:
     Config = sys.modules.get('Arab.Config', None)
     if Config is None:
@@ -337,6 +328,9 @@ BOTLOG = Config.BOTLOG
 BOTLOG_CHATID = Config.BOTLOG_CHATID
 PM_LOGGER_GROUP_ID = Config.PM_LOGGER_GROUP_ID
 EOF
+
+# ===== فحص Config فقط (بدون تشغيل كامل __init__.py) =====
+RUN python3 -c "from Arab.Config import Config; print('✅ Config OK')"
 
 # ملف التشغيل النهائي
 RUN cat > /root/Arab/run.py <<'EOF'
