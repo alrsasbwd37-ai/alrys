@@ -18,7 +18,9 @@ RUN mkdir -p /root/Arab/Arab/Config && \
     echo '    STRING_SESSION = os.environ.get("STRING_SESSION", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
     echo '    SESSION_NAME = os.environ.get("SESSION_NAME", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
     echo '    API_ID = int(os.environ.get("API_ID", 0))' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    APP_ID = int(os.environ.get("API_ID", 0))' >> /root/Arab/Arab/Config/iqthon_config.py && \
     echo '    API_HASH = os.environ.get("API_HASH", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    APP_HASH = os.environ.get("API_HASH", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
     echo '    RANDOM_STUFF_API_KEY = os.environ.get("RANDOM_STUFF_API_KEY", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
     echo '    LOG_GROUP = os.environ.get("LOG_GROUP", None)' >> /root/Arab/Arab/Config/iqthon_config.py && \
     echo '    DATABASE_URL = os.environ.get("DATABASE_URL", None)' >> /root/Arab/Arab/Config/iqthon_config.py && \
@@ -76,10 +78,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-# إنشاء BASE
 BASE = declarative_base()
 
-# إعداد SESSION
 DB_URI = os.environ.get("DATABASE_URL", None)
 
 if DB_URI:
@@ -87,13 +87,11 @@ if DB_URI:
     SESSION = scoped_session(sessionmaker(bind=engine))
     BASE.metadata.bind = engine
 else:
-    # استخدام SQLite كبديل
     engine = create_engine("sqlite:///Arab.db")
     SESSION = scoped_session(sessionmaker(bind=engine))
     BASE.metadata.bind = engine
     print("[WARNING] ⚠️ DATABASE_URL غير موجود، يتم استخدام SQLite مؤقتاً")
 
-# دالة لإنشاء الجداول
 def create_tables():
     BASE.metadata.create_all(engine)
 
@@ -155,13 +153,14 @@ RUN echo 'import os' > /root/Arab/run.py && \
     echo '    print("[ERROR] ❌ BOT_TOKEN غير موجود!")' >> /root/Arab/run.py && \
     echo '    sys.exit(1)' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
-    echo '# إنشاء Config' >> /root/Arab/run.py && \
     echo 'class Config:' >> /root/Arab/run.py && \
     echo '    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")' >> /root/Arab/run.py && \
     echo '    STRING_SESSION = os.environ.get("STRING_SESSION", "")' >> /root/Arab/run.py && \
     echo '    SESSION_NAME = os.environ.get("SESSION_NAME", "")' >> /root/Arab/run.py && \
     echo '    API_ID = int(os.environ.get("API_ID", 0))' >> /root/Arab/run.py && \
+    echo '    APP_ID = int(os.environ.get("API_ID", 0))' >> /root/Arab/run.py && \
     echo '    API_HASH = os.environ.get("API_HASH", "")' >> /root/Arab/run.py && \
+    echo '    APP_HASH = os.environ.get("API_HASH", "")' >> /root/Arab/run.py && \
     echo '    RANDOM_STUFF_API_KEY = os.environ.get("RANDOM_STUFF_API_KEY", "")' >> /root/Arab/run.py && \
     echo '    LOG_GROUP = os.environ.get("LOG_GROUP", None)' >> /root/Arab/run.py && \
     echo '    DATABASE_URL = os.environ.get("DATABASE_URL", None)' >> /root/Arab/run.py && \
@@ -180,7 +179,6 @@ RUN echo 'import os' > /root/Arab/run.py && \
     echo '    BOTLOG = False' >> /root/Arab/run.py && \
     echo '    BOTLOG_CHATID = "me"' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
-    echo '# حقن Config في sys.modules' >> /root/Arab/run.py && \
     echo 'import types' >> /root/Arab/run.py && \
     echo 'config_module = types.ModuleType("Arab.Config")' >> /root/Arab/run.py && \
     echo 'config_module.Config = Config' >> /root/Arab/run.py && \
@@ -218,7 +216,9 @@ except ImportError:
             STRING_SESSION = os.environ.get("STRING_SESSION", "")
             SESSION_NAME = os.environ.get("SESSION_NAME", "")
             API_ID = int(os.environ.get("API_ID", 0))
+            APP_ID = int(os.environ.get("API_ID", 0))
             API_HASH = os.environ.get("API_HASH", "")
+            APP_HASH = os.environ.get("API_HASH", "")
             RANDOM_STUFF_API_KEY = os.environ.get("RANDOM_STUFF_API_KEY", "")
             LOG_GROUP = os.environ.get("LOG_GROUP", None)
             DATABASE_URL = os.environ.get("DATABASE_URL", None)
@@ -314,7 +314,9 @@ EOF
 
 # ===== إصلاح core/session.py =====
 RUN sed -i 's/if Config.STRING_SESSION:/if hasattr(Config, "STRING_SESSION") and Config.STRING_SESSION:/g' /root/Arab/Arab/core/session.py && \
-    sed -i 's/elif Config.BOT_TOKEN:/elif hasattr(Config, "BOT_TOKEN") and Config.BOT_TOKEN:/g' /root/Arab/Arab/core/session.py
+    sed -i 's/elif Config.BOT_TOKEN:/elif hasattr(Config, "BOT_TOKEN") and Config.BOT_TOKEN:/g' /root/Arab/Arab/core/session.py && \
+    sed -i 's/Config.API_ID/Config.APP_ID/g' /root/Arab/Arab/core/session.py && \
+    sed -i 's/Config.API_HASH/Config.APP_HASH/g' /root/Arab/Arab/core/session.py
 
 # ===== إصلاح جميع ملفات core و helpers =====
 RUN find /root/Arab/Arab/core -name "*.py" -exec sed -i 's/from ..Config import Config/from Arab.Config.iqthon_config import Config/g' {} \;
