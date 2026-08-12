@@ -90,20 +90,14 @@ except ImportError:
     import logging
     LOGS = logging.getLogger("IQTHON")
 
-# دعم SESSION_NAME كجلسة نصية (String Session)
 def get_session():
     if Config.STRING_SESSION:
         return StringSession(Config.STRING_SESSION)
-    elif Config.SESSION_NAME:
-        # إذا كان SESSION_NAME يبدو كجلسة نصية طويلة
-        if len(Config.SESSION_NAME) > 50:
-            return StringSession(Config.SESSION_NAME)
-        else:
-            return Config.SESSION_NAME
+    elif Config.SESSION_NAME and len(Config.SESSION_NAME) > 50:
+        return StringSession(Config.SESSION_NAME)
     else:
-        return "userbot"
+        return Config.SESSION_NAME or "userbot"
 
-# إنشاء العميل
 iqthon = TelegramClient(
     get_session(),
     Config.APP_ID,
@@ -112,7 +106,6 @@ iqthon = TelegramClient(
     request_retries=5,
 )
 
-# تعيين tgbot
 try:
     if Config.BOT_TOKEN:
         iqthon.tgbot = TelegramClient(
@@ -128,7 +121,6 @@ except Exception as e:
     LOGS.error(f"Error setting tgbot: {e}")
     iqthon.tgbot = None
 
-# دالة بدء التشغيل
 async def start_bot():
     try:
         if Config.BOT_TOKEN:
@@ -137,6 +129,7 @@ async def start_bot():
         else:
             await iqthon.start()
             LOGS.info("✅ Userbot started successfully")
+        return iqthon
     except Exception as e:
         LOGS.error(f"❌ Failed to start: {e}")
         raise
@@ -406,7 +399,7 @@ BOTLOG_CHATID = Config.BOTLOG_CHATID
 PM_LOGGER_GROUP_ID = Config.PM_LOGGER_GROUP_ID
 EOF
 
-# ===== إنشاء run.py =====
+# ===== إنشاء run.py المعدل =====
 RUN cat > /root/Arab/run.py <<'EOF'
 import os
 import sys
@@ -425,6 +418,7 @@ if not os.environ.get("BOT_TOKEN"):
 
 async def main():
     try:
+        # إنشاء الجداول
         from Arab.sql_helper import create_tables
         create_tables()
         print("[INFO] ✅ تم التحقق من قاعدة البيانات")
@@ -435,9 +429,12 @@ async def main():
         from Arab import bot
         from Arab.core.session import start_bot
         
-        await start_bot()
+        # بدء التشغيل والحصول على العميل
+        client = await start_bot()
         print("✅ تم تشغيل البوت والاتصال بنجاح")
-        await bot.run_until_disconnected()
+        
+        # الانتظار حتى الانقطاع
+        await client.run_until_disconnected()
     except Exception as e:
         print(f"❌ خطأ في التشغيل: {e}")
         import traceback
