@@ -68,7 +68,71 @@ RUN echo 'from .utils.extdl import install_pip' > /root/Arab/Arab/helpers/chatbo
     echo '            _rs_client = None' >> /root/Arab/Arab/helpers/chatbot.py && \
     echo '    return _rs_client' >> /root/Arab/Arab/helpers/chatbot.py
 
-# ===== إنشاء run.py مع ترتيب صحيح للاستيراد =====
+# ===== إصلاح sql_helper/__init__.py =====
+RUN cat > /root/Arab/Arab/sql_helper/__init__.py << 'EOF'
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session
+
+# إنشاء BASE
+BASE = declarative_base()
+
+# إعداد SESSION
+DB_URI = os.environ.get("DATABASE_URL", None)
+
+if DB_URI:
+    engine = create_engine(DB_URI)
+    SESSION = scoped_session(sessionmaker(bind=engine))
+    BASE.metadata.bind = engine
+else:
+    # استخدام SQLite كبديل
+    engine = create_engine("sqlite:///Arab.db")
+    SESSION = scoped_session(sessionmaker(bind=engine))
+    BASE.metadata.bind = engine
+    print("[WARNING] ⚠️ DATABASE_URL غير موجود، يتم استخدام SQLite مؤقتاً")
+
+# دالة لإنشاء الجداول
+def create_tables():
+    BASE.metadata.create_all(engine)
+
+print("[INFO] ✅ تم إعداد قاعدة البيانات")
+EOF
+
+# ===== إصلاح sql_helper/globals.py =====
+RUN cat > /root/Arab/Arab/sql_helper/globals.py << 'EOF'
+from . import BASE, SESSION
+from sqlalchemy import Column, String
+
+class Globals(BASE):
+    __tablename__ = "globals"
+    key = Column(String, primary_key=True)
+    value = Column(String)
+
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
+
+def gvarstatus(key):
+    try:
+        return SESSION.query(Globals).filter(Globals.key == key).first().value
+    except:
+        return None
+
+def addgvar(key, value):
+    if gvarstatus(key) is not None:
+        return
+    SESSION.add(Globals(key, value))
+    SESSION.commit()
+
+def delgvar(key):
+    if gvarstatus(key) is None:
+        return
+    SESSION.delete(SESSION.query(Globals).filter(Globals.key == key).first())
+    SESSION.commit()
+EOF
+
+# ===== إنشاء run.py =====
 RUN echo 'import os' > /root/Arab/run.py && \
     echo 'import asyncio' >> /root/Arab/run.py && \
     echo 'import sys' >> /root/Arab/run.py && \
@@ -83,18 +147,14 @@ RUN echo 'import os' > /root/Arab/run.py && \
     echo '    asyncio.set_event_loop(asyncio.new_event_loop())' >> /root/Arab/run.py && \
     echo '    print("[INFO] تم إنشاء event loop جديد")' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
-    echo '# قراءة BOT_TOKEN من البيئة' >> /root/Arab/run.py && \
     echo 'BOT_TOKEN = os.environ.get("BOT_TOKEN")' >> /root/Arab/run.py && \
-    echo 'API_ID = os.environ.get("API_ID")' >> /root/Arab/run.py && \
-    echo 'API_HASH = os.environ.get("API_HASH")' >> /root/Arab/run.py && \
-    echo '' >> /root/Arab/run.py && \
     echo 'if BOT_TOKEN:' >> /root/Arab/run.py && \
     echo '    print("[INFO] ✅ سيتم التشغيل باستخدام BOT_TOKEN")' >> /root/Arab/run.py && \
     echo 'else:' >> /root/Arab/run.py && \
     echo '    print("[ERROR] ❌ BOT_TOKEN غير موجود!")' >> /root/Arab/run.py && \
     echo '    sys.exit(1)' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
-    echo '# إنشاء Config مباشرة' >> /root/Arab/run.py && \
+    echo '# إنشاء Config' >> /root/Arab/run.py && \
     echo 'class Config:' >> /root/Arab/run.py && \
     echo '    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")' >> /root/Arab/run.py && \
     echo '    SESSION_NAME = os.environ.get("SESSION_NAME", "")' >> /root/Arab/run.py && \
@@ -118,7 +178,7 @@ RUN echo 'import os' > /root/Arab/run.py && \
     echo '    BOTLOG = False' >> /root/Arab/run.py && \
     echo '    BOTLOG_CHATID = "me"' >> /root/Arab/run.py && \
     echo '' >> /root/Arab/run.py && \
-    echo '# ===== إنشاء وحدة Config في sys.modules =====' >> /root/Arab/run.py && \
+    echo '# حقن Config في sys.modules' >> /root/Arab/run.py && \
     echo 'import types' >> /root/Arab/run.py && \
     echo 'config_module = types.ModuleType("Arab.Config")' >> /root/Arab/run.py && \
     echo 'config_module.Config = Config' >> /root/Arab/run.py && \
@@ -145,16 +205,11 @@ import time
 import heroku3
 import sys
 
-# محاولة استيراد Config من المسار الصحيح
 try:
     from Arab.Config.iqthon_config import Config
 except ImportError:
-    # إذا فشل، حاول من sys.modules
     Config = sys.modules.get('Arab.Config', None)
     if Config is None:
-        Config = sys.modules.get('Config', None)
-    if Config is None:
-        # إنشاء Config افتراضي
         import os
         class Config:
             BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
