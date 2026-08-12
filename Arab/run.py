@@ -6,7 +6,6 @@ sys.path.insert(0, "/root/Arab")
 
 print("🚀 تشغيل Arab...")
 
-# إصلاح event loop
 try:
     asyncio.get_running_loop()
 except RuntimeError:
@@ -21,11 +20,8 @@ async def main():
         from Arab import bot
         from Arab.core.session import start_bot
         
-        # بدء التشغيل
         client = await start_bot()
         print("✅ تم تشغيل البوت والاتصال بنجاح")
-        
-        # الانتظار حتى الانقطاع
         await client.run_until_disconnected()
     except Exception as e:
         print(f"❌ خطأ في التشغيل: {e}")
