@@ -1,14 +1,15 @@
 from telethon import TelegramClient
-from ..Config.iqthon_config import Config
+from Arab.Config import Config
 
-# إنشاء جلسة اليوزربوت
+print("API_ID:", Config.API_ID)
+print("API_HASH:", Config.API_HASH[:5] if Config.API_HASH else "EMPTY")
+
 iqthon = TelegramClient(
     Config.SESSION_NAME,
     Config.API_ID,
     Config.API_HASH
 )
 
-# إنشاء بوت تيليجرام إذا كان التوكن موجود
 if Config.BOT_TOKEN:
     iqthon.tgbot = TelegramClient(
         "bot",
