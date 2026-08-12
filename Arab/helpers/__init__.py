@@ -31,6 +31,7 @@ def _ensure_imports():
             _lazy_modules[module_name] = True
         except ModuleNotFoundError as e:
             try:
+                # محاولة التثبيت (قد تفشل في Render)
                 install_pip(e.name)
                 exec(import_statement, globals())
                 _lazy_modules[module_name] = True
@@ -42,7 +43,7 @@ def _ensure_imports():
     return True
 
 
-# تحميل الموديولات الأساسية فوراً (التي لا تسبب مشاكل)
+# تحميل الموديولات الأساسية فوراً
 _ensure_imports()
 
 
@@ -51,30 +52,18 @@ def get_chatbot():
     """استيراد chatbot بشكل كسول (عند أول استخدام)"""
     if 'chatbot' not in _lazy_modules:
         try:
-            from .chatbot import get_rs_client, chat_with_ai, get_random_stuff
+            from .chatbot import get_rs_client
             _lazy_modules['chatbot'] = {
                 'get_rs_client': get_rs_client,
-                'chat_with_ai': chat_with_ai,
-                'get_random_stuff': get_random_stuff
             }
         except ModuleNotFoundError as e:
-            install_pip(e.name)
-            try:
-                from .chatbot import get_rs_client, chat_with_ai, get_random_stuff
-                _lazy_modules['chatbot'] = {
-                    'get_rs_client': get_rs_client,
-                    'chat_with_ai': chat_with_ai,
-                    'get_random_stuff': get_random_stuff
-                }
-            except Exception as ex:
-                print(f"[ERROR] Failed to load chatbot: {ex}")
-                _lazy_modules['chatbot'] = None
+            print(f"[WARNING] Chatbot not available: {e}")
+            _lazy_modules['chatbot'] = None
+        except Exception as ex:
+            print(f"[ERROR] Failed to load chatbot: {ex}")
+            _lazy_modules['chatbot'] = None
 
     return _lazy_modules.get('chatbot')
-
-
-# دوال وهمية للتوافق مع الكود القديم (لتجنب أخطاء NameError)
-# يمكن استدعاؤها مباشرة وسيتم تحميل الموديول تلقائياً
 
 
 def __getattr__(name):
@@ -92,7 +81,5 @@ __all__ = [
     'catmemes',
     'AioHttp',
     'get_rs_client',
-    'chat_with_ai',
-    'get_random_stuff',
     'get_chatbot'
 ]
