@@ -1,4 +1,4 @@
-cat > /root/Arab/run.py << 'EOF'
+# run.py - النسخة النهائية
 import os
 import asyncio
 import sys
@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, "/root/Arab")
 
 # ==========================================
-# 🤖 بيانات البوت
+# 🤖 بيانات البوت (ضع قيمك الحقيقية)
 # ==========================================
 os.environ["BOT_TOKEN"] = "your_bot_token_here"
 os.environ["API_ID"] = "32419741"
@@ -31,7 +31,7 @@ API_ID = os.environ.get("API_ID")
 API_HASH = os.environ.get("API_HASH")
 
 if BOT_TOKEN:
-    print("[INFO] ✅ سيتم التشغيل باستخدام BOT_TOKEN")
+    print(f"[INFO] ✅ سيتم التشغيل باستخدام BOT_TOKEN")
 elif SESSION_NAME and API_ID and API_HASH:
     print(f"[INFO] ✅ سيتم التشغيل باستخدام الجلسة: {SESSION_NAME}")
 else:
@@ -39,7 +39,7 @@ else:
     sys.exit(1)
 
 # ==========================================
-# 🔧 إنشاء Config مباشرة قبل استيراد Arab
+# 🔧 إنشاء Config مباشرة وتجاوز استيراد المشروع
 # ==========================================
 class Config:
     BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
@@ -57,17 +57,28 @@ class Config:
     DB_URI = os.environ.get("DATABASE_URL", None)
     REDIS_URI = os.environ.get("REDIS_URI", None)
 
-# تعيين Config في مسار Arab
+# ==========================================
+# 📦 حقن Config في مسارات الاستيراد المختلفة
+# ==========================================
+import importlib
+import types
+
+# 1. تعيين Config في وحدة Arab
 import Arab
 Arab.Config = Config
 
-# أيضًا تعيينه في sys.modules لتجنب مشاكل الاستيراد
-import sys
+# 2. تعيين في sys.modules لجميع المسارات الممكنة
 sys.modules['Arab.Config'] = Config
 sys.modules['Arab.Config.iqthon_config'] = Config
 sys.modules['sample_config'] = Config
+sys.modules['config'] = Config
 
-print("[INFO] ✅ تم إنشاء Config بنجاح")
+# 3. إنشاء وحدة وهمية للـ Config
+config_module = types.ModuleType('Arab.Config')
+config_module.Config = Config
+sys.modules['Arab.Config'] = config_module
+
+print("[INFO] ✅ تم إنشاء Config وتجاوز الاستيراد بنجاح")
 print("[INFO] 🚀 جاري تشغيل Arab...")
 
 try:
@@ -75,5 +86,6 @@ try:
     runpy.run_module("Arab", run_name="__main__")
 except Exception as e:
     print(f"[ERROR] ❌ فشل التشغيل: {e}")
+    import traceback
+    traceback.print_exc()
     sys.exit(1)
-EOF
