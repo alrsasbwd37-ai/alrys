@@ -8,7 +8,10 @@ WORKDIR /root/Arab
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# إنشاء Config
+# ===== تثبيت المكتبات المفقودة =====
+RUN pip install youtube-search-python
+
+# ===== إنشاء Config =====
 RUN mkdir -p /root/Arab/Arab/Config && \
 cat > /root/Arab/Arab/Config/iqthon_config.py <<'EOF'
 import os
@@ -66,15 +69,15 @@ EOF
 
 RUN echo "from .iqthon_config import Config" > /root/Arab/Arab/Config/__init__.py
 
-# إصلاح الاستيرادات - استخدام Arab.Config
+# ===== إصلاح الاستيرادات =====
 RUN find /root/Arab/Arab -name "*.py" \
 -exec sed -i 's/from \.\.Config import Config/from Arab.Config import Config/g' {} \;
 
-# إصلاح session.py
+# ===== إصلاح session.py =====
 RUN sed -i 's/Config.API_ID/Config.APP_ID/g' /root/Arab/Arab/core/session.py || true
 RUN sed -i 's/Config.API_HASH/Config.APP_HASH/g' /root/Arab/Arab/core/session.py || true
 
-# إصلاح sql_helper/__init__.py
+# ===== إصلاح sql_helper/__init__.py =====
 RUN cat > /root/Arab/Arab/sql_helper/__init__.py <<'EOF'
 import os
 from sqlalchemy import create_engine
@@ -119,7 +122,7 @@ print("[INFO] ✅ تم إعداد قاعدة البيانات")
 __all__ = ['BASE', 'SESSION', 'create_tables']
 EOF
 
-# إصلاح sql_helper/globals.py
+# ===== إصلاح sql_helper/globals.py =====
 RUN cat > /root/Arab/Arab/sql_helper/globals.py <<'EOF'
 import sys
 try:
@@ -176,7 +179,7 @@ def delgvar(key):
         SESSION.rollback()
 EOF
 
-# إصلاح chatbot.py
+# ===== إصلاح chatbot.py =====
 RUN cat > /root/Arab/Arab/helpers/chatbot.py <<'EOF'
 import randomstuff
 from Arab.Config import Config
@@ -198,7 +201,7 @@ async def get_rs_client():
     return _rs_client
 EOF
 
-# إصلاح helpers/__init__.py - بدون youtubesearchpython
+# ===== إصلاح helpers/__init__.py =====
 RUN cat > /root/Arab/Arab/helpers/__init__.py <<'EOF'
 from . import fonts
 from . import memeshelper as catmemes
@@ -216,7 +219,7 @@ except Exception as e:
     print(f"[WARNING] helpers load error: {e}")
 EOF
 
-# إصلاح Arab/__init__.py
+# ===== إصلاح Arab/__init__.py =====
 RUN cat > /root/Arab/Arab/__init__.py <<'EOF'
 import time
 import heroku3
@@ -330,14 +333,17 @@ BOTLOG_CHATID = Config.BOTLOG_CHATID
 PM_LOGGER_GROUP_ID = Config.PM_LOGGER_GROUP_ID
 EOF
 
-# ===== فحص Config فقط =====
+# ===== فحص Config =====
 RUN python3 -c "from Arab.Config import Config; print('✅ Config OK')"
 
-# ===== ملف التشغيل النهائي =====
+# ===== إنشاء run.py =====
 RUN cat > /root/Arab/run.py <<'EOF'
 import os
 import sys
 import asyncio
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 sys.path.insert(0, "/root/Arab")
 
@@ -347,24 +353,31 @@ if not os.environ.get("BOT_TOKEN"):
     print("❌ BOT_TOKEN غير موجود")
     sys.exit(1)
 
-try:
-    asyncio.get_running_loop()
-except RuntimeError:
-    asyncio.set_event_loop(asyncio.new_event_loop())
+async def main():
+    try:
+        # إنشاء الجداول إذا لم تكن موجودة
+        try:
+            from Arab.sql_helper import create_tables
+            create_tables()
+            print("[INFO] ✅ تم التحقق من قاعدة البيانات")
+        except Exception as e:
+            print(f"[WARNING] ⚠️ مشكلة في قاعدة البيانات: {e}")
 
-try:
-    from Arab import bot
-    print("✅ تم تشغيل البوت")
-except Exception as e:
-    import traceback
-    traceback.print_exc()
-    sys.exit(1)
+        from Arab import bot
+        
+        # بدء التشغيل
+        await bot.start(bot_token=os.environ.get("BOT_TOKEN"))
+        
+        print("✅ تم تشغيل البوت والاتصال بنجاح")
+        await bot.run_until_disconnected()
+    except Exception as e:
+        print(f"❌ خطأ في التشغيل: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
-try:
-    bot.run_until_disconnected()
-except Exception as e:
-    print(f"❌ خطأ في التشغيل: {e}")
-    sys.exit(1)
+if __name__ == "__main__":
+    asyncio.run(main())
 EOF
 
 ENV PATH="/home/Arab/bin:$PATH"
