@@ -15,6 +15,7 @@ RUN mkdir -p /root/Arab/Arab/Config && \
     echo '' >> /root/Arab/Arab/Config/iqthon_config.py && \
     echo 'class Config:' >> /root/Arab/Arab/Config/iqthon_config.py && \
     echo '    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    STRING_SESSION = os.environ.get("STRING_SESSION", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
     echo '    SESSION_NAME = os.environ.get("SESSION_NAME", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
     echo '    API_ID = int(os.environ.get("API_ID", 0))' >> /root/Arab/Arab/Config/iqthon_config.py && \
     echo '    API_HASH = os.environ.get("API_HASH", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
@@ -157,6 +158,7 @@ RUN echo 'import os' > /root/Arab/run.py && \
     echo '# إنشاء Config' >> /root/Arab/run.py && \
     echo 'class Config:' >> /root/Arab/run.py && \
     echo '    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")' >> /root/Arab/run.py && \
+    echo '    STRING_SESSION = os.environ.get("STRING_SESSION", "")' >> /root/Arab/run.py && \
     echo '    SESSION_NAME = os.environ.get("SESSION_NAME", "")' >> /root/Arab/run.py && \
     echo '    API_ID = int(os.environ.get("API_ID", 0))' >> /root/Arab/run.py && \
     echo '    API_HASH = os.environ.get("API_HASH", "")' >> /root/Arab/run.py && \
@@ -213,6 +215,7 @@ except ImportError:
         import os
         class Config:
             BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+            STRING_SESSION = os.environ.get("STRING_SESSION", "")
             SESSION_NAME = os.environ.get("SESSION_NAME", "")
             API_ID = int(os.environ.get("API_ID", 0))
             API_HASH = os.environ.get("API_HASH", "")
@@ -308,6 +311,10 @@ BOTLOG = Config.BOTLOG
 BOTLOG_CHATID = Config.BOTLOG_CHATID
 PM_LOGGER_GROUP_ID = Config.PM_LOGGER_GROUP_ID
 EOF
+
+# ===== إصلاح core/session.py =====
+RUN sed -i 's/if Config.STRING_SESSION:/if hasattr(Config, "STRING_SESSION") and Config.STRING_SESSION:/g' /root/Arab/Arab/core/session.py && \
+    sed -i 's/elif Config.BOT_TOKEN:/elif hasattr(Config, "BOT_TOKEN") and Config.BOT_TOKEN:/g' /root/Arab/Arab/core/session.py
 
 # ===== إصلاح جميع ملفات core و helpers =====
 RUN find /root/Arab/Arab/core -name "*.py" -exec sed -i 's/from ..Config import Config/from Arab.Config.iqthon_config import Config/g' {} \;
