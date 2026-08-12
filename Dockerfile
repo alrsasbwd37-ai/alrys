@@ -8,7 +8,6 @@ WORKDIR /root/Arab
 
 # ===== التصحيح المباشر =====
 RUN echo "🔧 Applying critical fixes..." && \
-    # 1. إصلاح chatbot.py
     printf '%s\n' \
     'from .utils.extdl import install_pip' \
     '' \
@@ -46,7 +45,6 @@ RUN echo "🔧 Applying critical fixes..." && \
     '    except Exception as e:' \
     '        return f"حدث خطأ: {e}"' \
     > /root/Arab/Arab/helpers/chatbot.py && \
-    # 2. إصلاح __init__.py
     printf '%s\n' \
     'from . import fonts' \
     'from . import memeshelper as catmemes' \
@@ -57,7 +55,7 @@ RUN echo "🔧 Applying critical fixes..." && \
     'check = 0' \
     'while flag:' \
     '    try:' \
-    '        # from .chatbot import *  # تم التعليق' \
+    '        # from .chatbot import *' \
     '        from .functions import *' \
     '        from .memeifyhelpers import *' \
     '        from .progress import *' \
@@ -77,50 +75,53 @@ RUN echo "🔧 Applying critical fixes..." && \
     > /root/Arab/Arab/helpers/__init__.py && \
     echo "✅ Fixes applied successfully!"
 
-# تثبيت المتطلبات
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-# ===== إنشاء run.py للتشغيل الآمن =====
+# ===== إنشاء run.py =====
 RUN printf '%s\n' \
     'import os' \
     'import asyncio' \
     'import sys' \
     '' \
-    '# قراءة المتغيرات من البيئة' \
-    'BOT_TOKEN = os.environ.get("BOT_TOKEN")' \
-    'PHONE = os.environ.get("PHONE_NUMBER")' \
-    'API_ID = os.environ.get("API_ID")' \
-    'API_HASH = os.environ.get("API_HASH")' \
+    'os.environ["SESSION_NAME"] = "arab_session"' \
+    'os.environ["API_ID"] = "32419741"' \
+    'os.environ["API_HASH"] = "3b646239045f6be4d40498726b00b414"' \
+    'os.environ["BOT_TOKEN"] = "your_bot_token_here"' \
     '' \
-    'print("[INFO] جاري تهيئة البيئة...")' \
+    'print("[INFO] 🚀 جاري تهيئة البيئة...")' \
     '' \
-    '# إصلاح event loop' \
     'try:' \
     '    asyncio.get_running_loop()' \
     'except RuntimeError:' \
     '    asyncio.set_event_loop(asyncio.new_event_loop())' \
     '    print("[INFO] تم إنشاء event loop جديد")' \
     '' \
-    '# التحقق من المتغيرات' \
+    'BOT_TOKEN = os.environ.get("BOT_TOKEN")' \
+    'SESSION_NAME = os.environ.get("SESSION_NAME")' \
+    'API_ID = os.environ.get("API_ID")' \
+    'API_HASH = os.environ.get("API_HASH")' \
+    '' \
     'if BOT_TOKEN:' \
-    '    print("[INFO] سيتم التشغيل باستخدام BOT_TOKEN")' \
-    'elif PHONE and API_ID and API_HASH:' \
-    '    print(f"[INFO] سيتم التشغيل باستخدام: {PHONE}")' \
+    '    print("[INFO] ✅ سيتم التشغيل باستخدام BOT_TOKEN")' \
+    'elif SESSION_NAME and API_ID and API_HASH:' \
+    '    print(f"[INFO] ✅ سيتم التشغيل باستخدام الجلسة: {SESSION_NAME}")' \
     'else:' \
-    '    print("[ERROR] يرجى تعيين BOT_TOKEN أو (PHONE_NUMBER, API_ID, API_HASH)")' \
+    '    print("[ERROR] ❌ لم يتم العثور على BOT_TOKEN أو بيانات الجلسة!")' \
     '    sys.exit(1)' \
     '' \
-    'print("[INFO] جاري تشغيل Arab...")' \
+    'print("[INFO] 🚀 جاري تشغيل Arab...")' \
     '' \
     'try:' \
     '    import runpy' \
     '    runpy.run_module("Arab", run_name="__main__")' \
     'except Exception as e:' \
-    '    print(f"[ERROR] فشل التشغيل: {e}")' \
+    '    print(f"[ERROR] ❌ فشل التشغيل: {e}")' \
     '    sys.exit(1)' \
     > /root/Arab/run.py
 
+# انسخ ملف الجلسة (إذا كان موجوداً)
+COPY arab_session.session /root/Arab/arab_session.session 2>/dev/null || true
+
 ENV PATH="/home/Arab/bin:$PATH"
 
-# ===== التشغيل باستخدام run.py =====
 CMD ["python3", "/root/Arab/run.py"]
