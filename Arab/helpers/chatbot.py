@@ -17,7 +17,8 @@ async def get_rs_client():
     if rs_client is None:
         rs_client = randomstuff.AsyncClient(
             api_key=Config.RANDOM_STUFF_API_KEY,
-            version="4"
+            version="4",
+            suppress_warnings=True
         )
 
     return rs_client
