@@ -8,4 +8,16 @@ except ModuleNotFoundError:
 
 from ..Config import Config
 
-rs_client = randomstuff.AsyncClient(api_key=Config.RANDOM_STUFF_API_KEY, version="4")
+rs_client = None
+
+
+async def get_rs_client():
+    global rs_client
+
+    if rs_client is None:
+        rs_client = randomstuff.AsyncClient(
+            api_key=Config.RANDOM_STUFF_API_KEY,
+            version="4"
+        )
+
+    return rs_client
