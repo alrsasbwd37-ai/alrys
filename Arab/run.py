@@ -3,12 +3,13 @@ import sys
 import asyncio
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import time
 
 sys.path.insert(0, "/root/Arab")
 
 print("🚀 تشغيل Arab...")
 
-# ===== خادم ويب بسيط لإبقاء المنفذ مفتوحاً =====
+# ===== خادم ويب بسيط =====
 class DummyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -19,13 +20,20 @@ class DummyHandler(BaseHTTPRequestHandler):
         pass  # منع الـ logs المزعجة
 
 def start_web_server():
-    port = int(os.environ.get("PORT", 10000))
-    server = HTTPServer(('0.0.0.0', port), DummyHandler)
-    print(f"[INFO] ✅ خادم الويب يعمل على المنفذ {port}")
-    server.serve_forever()
+    try:
+        port = int(os.environ.get("PORT", 10000))
+        server = HTTPServer(('0.0.0.0', port), DummyHandler)
+        print(f"[INFO] ✅ خادم الويب يعمل على المنفذ {port}")
+        server.serve_forever()
+    except Exception as e:
+        print(f"[ERROR] ❌ فشل خادم الويب: {e}")
 
 # تشغيل الخادم في خلفية منفصلة
-threading.Thread(target=start_web_server, daemon=True).start()
+web_thread = threading.Thread(target=start_web_server, daemon=True)
+web_thread.start()
+
+# انتظار ثانية للتأكد من بدء الخادم
+time.sleep(1)
 # =============================================
 
 # إصلاح event loop
