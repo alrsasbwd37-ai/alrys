@@ -8,6 +8,7 @@ WORKDIR /root/Arab
 
 # ===== التصحيح المباشر =====
 RUN echo "🔧 Applying critical fixes..." && \
+    # 1. إصلاح chatbot.py
     printf '%s\n' \
     'from .utils.extdl import install_pip' \
     '' \
@@ -45,6 +46,7 @@ RUN echo "🔧 Applying critical fixes..." && \
     '    except Exception as e:' \
     '        return f"حدث خطأ: {e}"' \
     > /root/Arab/Arab/helpers/chatbot.py && \
+    # 2. إصلاح __init__.py
     printf '%s\n' \
     'from . import fonts' \
     'from . import memeshelper as catmemes' \
@@ -73,6 +75,18 @@ RUN echo "🔧 Applying critical fixes..." && \
     '    from .chatbot import get_rs_client, chat_with_ai' \
     '    return {"get_rs_client": get_rs_client, "chat_with_ai": chat_with_ai}' \
     > /root/Arab/Arab/helpers/__init__.py && \
+    # 3. إنشاء ملف Config مؤقت إذا كان مفقوداً
+    if [ ! -f /root/Arab/Arab/Config/iqthon_config.py ]; then \
+        mkdir -p /root/Arab/Arab/Config && \
+        printf '%s\n' \
+        'class Config:' \
+        '    RANDOM_STUFF_API_KEY = ""' \
+        '    BOT_TOKEN = ""' \
+        '    API_ID = 0' \
+        '    API_HASH = ""' \
+        '    SESSION_NAME = ""' \
+        > /root/Arab/Arab/Config/iqthon_config.py; \
+    fi && \
     echo "✅ Fixes applied successfully!"
 
 RUN pip3 install --no-cache-dir -r requirements.txt
@@ -83,10 +97,13 @@ RUN printf '%s\n' \
     'import asyncio' \
     'import sys' \
     '' \
-    'os.environ["SESSION_NAME"] = "arab_session"' \
+    '# إضافة مسار المشروع' \
+    'sys.path.insert(0, "/root/Arab")' \
+    '' \
+    'os.environ["BOT_TOKEN"] = "your_bot_token_here"' \
     'os.environ["API_ID"] = "32419741"' \
     'os.environ["API_HASH"] = "3b646239045f6be4d40498726b00b414"' \
-    'os.environ["BOT_TOKEN"] = "your_bot_token_here"' \
+    'os.environ["SESSION_NAME"] = "arab_session"' \
     '' \
     'print("[INFO] 🚀 جاري تهيئة البيئة...")' \
     '' \
@@ -108,6 +125,22 @@ RUN printf '%s\n' \
     'else:' \
     '    print("[ERROR] ❌ لم يتم العثور على BOT_TOKEN أو بيانات الجلسة!")' \
     '    sys.exit(1)' \
+    '' \
+    '# محاولة استيراد Config' \
+    'try:' \
+    '    from Arab.Config.iqthon_config import Config' \
+    '    print("[INFO] ✅ تم استيراد Config بنجاح")' \
+    'except ImportError:' \
+    '    print("[WARNING] ⚠️ Config غير موجود، سيتم استخدام القيم المباشرة")' \
+    '    # إنشاء Config مؤقت' \
+    '    class Config:' \
+    '        BOT_TOKEN = os.environ.get("BOT_TOKEN", "")' \
+    '        API_ID = int(os.environ.get("API_ID", 0))' \
+    '        API_HASH = os.environ.get("API_HASH", "")' \
+    '        SESSION_NAME = os.environ.get("SESSION_NAME", "")' \
+    '        RANDOM_STUFF_API_KEY = os.environ.get("RANDOM_STUFF_API_KEY", "")' \
+    '    import Arab' \
+    '    Arab.Config = Config' \
     '' \
     'print("[INFO] 🚀 جاري تشغيل Arab...")' \
     '' \
