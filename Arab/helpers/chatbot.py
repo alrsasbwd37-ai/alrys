@@ -17,8 +17,17 @@ async def get_rs_client():
     if rs_client is None:
         rs_client = randomstuff.AsyncClient(
             api_key=Config.RANDOM_STUFF_API_KEY,
-            version="4",
-            suppress_warnings=True
+            version="4"
         )
 
     return rs_client
+
+
+async def ask_randomstuff(message):
+    client = await get_rs_client()
+
+    try:
+        response = await client.get_ai_response(message)
+        return response
+    except Exception:
+        return None
