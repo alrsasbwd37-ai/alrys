@@ -8,7 +8,6 @@ WORKDIR /root/Arab
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ===== تثبيت المكتبات المفقودة =====
 RUN pip install youtube-search-python
 
 # ===== إنشاء Config =====
@@ -73,15 +72,12 @@ RUN echo "from .iqthon_config import Config" > /root/Arab/Arab/Config/__init__.p
 RUN find /root/Arab/Arab -name "*.py" \
 -exec sed -i 's/from \.\.Config import Config/from Arab.Config import Config/g' {} \;
 
-# ===== إصلاح session.py - إزالة await غير الصحيح =====
-RUN sed -i 's/Config.API_ID/Config.APP_ID/g' /root/Arab/Arab/core/session.py || true
-RUN sed -i 's/Config.API_HASH/Config.APP_HASH/g' /root/Arab/Arab/core/session.py || true
-
-# ===== إصلاح core/session.py بالكامل =====
+# ===== إصلاح session.py =====
 RUN cat > /root/Arab/Arab/core/session.py <<'EOF'
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 import asyncio
+import os
 
 from Arab.Config import Config
 
@@ -94,16 +90,29 @@ except ImportError:
     import logging
     LOGS = logging.getLogger("IQTHON")
 
+# دعم SESSION_NAME كجلسة نصية (String Session)
+def get_session():
+    if Config.STRING_SESSION:
+        return StringSession(Config.STRING_SESSION)
+    elif Config.SESSION_NAME:
+        # إذا كان SESSION_NAME يبدو كجلسة نصية طويلة
+        if len(Config.SESSION_NAME) > 50:
+            return StringSession(Config.SESSION_NAME)
+        else:
+            return Config.SESSION_NAME
+    else:
+        return "userbot"
+
 # إنشاء العميل
 iqthon = TelegramClient(
-    StringSession(Config.STRING_SESSION) if Config.STRING_SESSION else Config.SESSION_NAME,
+    get_session(),
     Config.APP_ID,
     Config.APP_HASH,
     connection_retries=5,
     request_retries=5,
 )
 
-# تعيين tgbot كائن عادي (ليس كوروتين)
+# تعيين tgbot
 try:
     if Config.BOT_TOKEN:
         iqthon.tgbot = TelegramClient(
@@ -275,27 +284,27 @@ except Exception as e:
     print(f"[WARNING] helpers load error: {e}")
 EOF
 
-# ===== إصلاح Arab/__init__.py - إزالة tgbot.version =====
+# ===== إصلاح Arab/__init__.py =====
 RUN cat > /root/Arab/Arab/__init__.py <<'EOF'
 import time
 import heroku3
 import sys
+import os
 
 try:
     from .Config import Config
 except ImportError:
     Config = sys.modules.get('Arab.Config', None)
     if Config is None:
-        import os
         class Config:
             BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
             TG_BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
             STRING_SESSION = os.environ.get("STRING_SESSION", "")
             SESSION_NAME = os.environ.get("SESSION_NAME", "")
             API_ID = int(os.environ.get("API_ID", 0))
-            APP_ID = int(os.environ.get("API_ID", 0))
-            API_HASH = os.environ.get("API_HASH", "")
-            APP_HASH = os.environ.get("API_HASH", "")
+            APP_ID = int(os.environ.get("API_ID", 32419741))
+            API_HASH = os.environ.get("API_HASH", "3b646239045f6be4d40498726b00b414")
+            APP_HASH = os.environ.get("API_HASH", "3b646239045f6be4d40498726b00b414")
             RANDOM_STUFF_API_KEY = os.environ.get("RANDOM_STUFF_API_KEY", "")
             LOG_GROUP = os.environ.get("LOG_GROUP", None)
             DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///Arab.db")
@@ -314,6 +323,9 @@ except ImportError:
             BOTLOG = False
             BOTLOG_CHATID = "me"
 
+if 'Arab.Config' not in sys.modules:
+    sys.modules['Arab.Config'] = Config
+
 from .core.logger import logging
 from .core.session import iqthon
 from .sql_helper.globals import addgvar, delgvar, gvarstatus
@@ -325,7 +337,6 @@ __copyright__ = "telethon AR (C) 2020 - 2021 " + __author__
 
 iqthon.version = __version__
 
-# إصلاح: tgbot قد لا يكون موجوداً
 try:
     if iqthon.tgbot:
         iqthon.tgbot.version = __version__
@@ -395,9 +406,6 @@ BOTLOG_CHATID = Config.BOTLOG_CHATID
 PM_LOGGER_GROUP_ID = Config.PM_LOGGER_GROUP_ID
 EOF
 
-# ===== فحص Config =====
-RUN python3 -c "from Arab.Config import Config; print('✅ Config OK')"
-
 # ===== إنشاء run.py =====
 RUN cat > /root/Arab/run.py <<'EOF'
 import os
@@ -417,15 +425,13 @@ if not os.environ.get("BOT_TOKEN"):
 
 async def main():
     try:
-        # إنشاء الجداول
-        try:
-            from Arab.sql_helper import create_tables
-            create_tables()
-            print("[INFO] ✅ تم التحقق من قاعدة البيانات")
-        except Exception as e:
-            print(f"[WARNING] ⚠️ مشكلة في قاعدة البيانات: {e}")
+        from Arab.sql_helper import create_tables
+        create_tables()
+        print("[INFO] ✅ تم التحقق من قاعدة البيانات")
+    except Exception as e:
+        print(f"[WARNING] ⚠️ مشكلة في قاعدة البيانات: {e}")
 
-        # استيراد البوت وبدء التشغيل
+    try:
         from Arab import bot
         from Arab.core.session import start_bot
         
