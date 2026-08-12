@@ -19,7 +19,7 @@ try:
     iqthon = CatUserBotClient(
         session=session,
         api_id=Config.APP_ID,
-        api_hash=Config.API_HASH,
+        api_hash=Config.APP_HASH,
         loop=loop,
         app_version=__version__,
         connection=ConnectionTcpAbridged,
@@ -30,14 +30,17 @@ except Exception as e:
     print(f"كود تيرمكس  - {str(e)}")
     sys.exit()
 
-
-iqthon.tgbot = tgbot = CatUserBotClient(
-    session="iqTgbot",
-    api_id=Config.APP_ID,
-    api_hash=Config.API_HASH,
-    loop=loop,
-    app_version=__version__,
-    connection=ConnectionTcpAbridged,
-    auto_reconnect=True,
-    connection_retries=None,
-).start(bot_token=Config.TG_BOT_TOKEN)
+# ===== إصلاح tgbot: تأجيل البدء =====
+if Config.TG_BOT_TOKEN:
+    iqthon.tgbot = CatUserBotClient(
+        session="iqTgbot",
+        api_id=Config.APP_ID,
+        api_hash=Config.APP_HASH,
+        loop=loop,
+        app_version=__version__,
+        connection=ConnectionTcpAbridged,
+        auto_reconnect=True,
+        connection_retries=None,
+    )
+else:
+    iqthon.tgbot = None
