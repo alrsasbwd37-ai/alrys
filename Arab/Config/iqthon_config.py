@@ -1,36 +1,47 @@
-RUN mkdir -p /root/Arab/Arab/Config && \
-cat > /root/Arab/Arab/Config/iqthon_config.py <<'EOF'
 import os
+
 
 class Config:
 
+    # بوت تيليجرام
     TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
     BOT_TOKEN = TG_BOT_TOKEN
 
+    # جلسة اليوزربوت
     STRING_SESSION = os.environ.get("STRING_SESSION", "")
     SESSION_NAME = STRING_SESSION
 
+    # API تيليجرام
     APP_ID = int(os.environ.get("APP_ID", "0"))
     APP_HASH = os.environ.get("APP_HASH", "")
 
     API_ID = APP_ID
     API_HASH = APP_HASH
 
+    # المالك
     OWNER_ID = int(os.environ.get("OWNER_ID", "0"))
 
+    # قاعدة البيانات
     DATABASE_URL = os.environ.get(
         "DATABASE_URL",
         "sqlite:///Arab.db"
     )
+
     DB_URI = DATABASE_URL
 
-    REDIS_URI = os.environ.get("REDIS_URI", None)
+    # Redis
+    REDIS_URI = os.environ.get(
+        "REDIS_URI",
+        None
+    )
 
+    # الأوامر
     COMMAND_HANDLER = os.environ.get(
         "COMMAND_HANDLER",
         "."
     )
 
+    # سودو
     SUDO_USERS = list(
         map(
             int,
@@ -41,6 +52,7 @@ class Config:
         )
     )
 
+    # API إضافي
     RANDOM_STUFF_API_KEY = os.environ.get(
         "RANDOM_STUFF_API_KEY",
         ""
@@ -77,5 +89,9 @@ class Config:
     BOTLOG = False
     BOTLOG_CHATID = "me"
 
+
 print("✅ iqthon Config Loaded")
-EOF
+print("DEBUG APP_ID:", Config.APP_ID)
+print("DEBUG APP_HASH:", Config.API_HASH[:6] if Config.API_HASH else "EMPTY")
+print("DEBUG SESSION:", bool(Config.SESSION_NAME))
+print("DEBUG BOT:", bool(Config.BOT_TOKEN))
