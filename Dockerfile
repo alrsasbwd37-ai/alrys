@@ -1,8 +1,7 @@
 FROM python:3.10-slim
 
-RUN apt update && apt install -y git
+RUN apt update && apt install -y git gcc libpq-dev
 
-# clone your fork
 RUN git clone https://github.com/alrsasbwd37-ai/alrys.git /root/Arab
 
 WORKDIR /root/Arab
