@@ -73,9 +73,65 @@ RUN echo "from .iqthon_config import Config" > /root/Arab/Arab/Config/__init__.p
 RUN find /root/Arab/Arab -name "*.py" \
 -exec sed -i 's/from \.\.Config import Config/from Arab.Config import Config/g' {} \;
 
-# ===== إصلاح session.py =====
+# ===== إصلاح session.py - إزالة await غير الصحيح =====
 RUN sed -i 's/Config.API_ID/Config.APP_ID/g' /root/Arab/Arab/core/session.py || true
 RUN sed -i 's/Config.API_HASH/Config.APP_HASH/g' /root/Arab/Arab/core/session.py || true
+
+# ===== إصلاح core/session.py بالكامل =====
+RUN cat > /root/Arab/Arab/core/session.py <<'EOF'
+from telethon import TelegramClient, events
+from telethon.sessions import StringSession
+import asyncio
+
+from Arab.Config import Config
+
+LOGS = None
+
+try:
+    from .logger import logging
+    LOGS = logging.getLogger("IQTHON")
+except ImportError:
+    import logging
+    LOGS = logging.getLogger("IQTHON")
+
+# إنشاء العميل
+iqthon = TelegramClient(
+    StringSession(Config.STRING_SESSION) if Config.STRING_SESSION else Config.SESSION_NAME,
+    Config.APP_ID,
+    Config.APP_HASH,
+    connection_retries=5,
+    request_retries=5,
+)
+
+# تعيين tgbot كائن عادي (ليس كوروتين)
+try:
+    if Config.BOT_TOKEN:
+        iqthon.tgbot = TelegramClient(
+            "bot",
+            Config.APP_ID,
+            Config.APP_HASH,
+            connection_retries=5,
+            request_retries=5,
+        )
+    else:
+        iqthon.tgbot = None
+except Exception as e:
+    LOGS.error(f"Error setting tgbot: {e}")
+    iqthon.tgbot = None
+
+# دالة بدء التشغيل
+async def start_bot():
+    try:
+        if Config.BOT_TOKEN:
+            await iqthon.tgbot.start(bot_token=Config.BOT_TOKEN)
+            LOGS.info("✅ Bot started successfully")
+        else:
+            await iqthon.start()
+            LOGS.info("✅ Userbot started successfully")
+    except Exception as e:
+        LOGS.error(f"❌ Failed to start: {e}")
+        raise
+EOF
 
 # ===== إصلاح sql_helper/__init__.py =====
 RUN cat > /root/Arab/Arab/sql_helper/__init__.py <<'EOF'
@@ -219,7 +275,7 @@ except Exception as e:
     print(f"[WARNING] helpers load error: {e}")
 EOF
 
-# ===== إصلاح Arab/__init__.py =====
+# ===== إصلاح Arab/__init__.py - إزالة tgbot.version =====
 RUN cat > /root/Arab/Arab/__init__.py <<'EOF'
 import time
 import heroku3
@@ -268,7 +324,13 @@ __author__ = "<t.me/iqthon>"
 __copyright__ = "telethon AR (C) 2020 - 2021 " + __author__
 
 iqthon.version = __version__
-iqthon.tgbot.version = __version__
+
+# إصلاح: tgbot قد لا يكون موجوداً
+try:
+    if iqthon.tgbot:
+        iqthon.tgbot.version = __version__
+except AttributeError:
+    pass
 
 LOGS = logging.getLogger("IQTHON")
 
@@ -355,7 +417,7 @@ if not os.environ.get("BOT_TOKEN"):
 
 async def main():
     try:
-        # إنشاء الجداول إذا لم تكن موجودة
+        # إنشاء الجداول
         try:
             from Arab.sql_helper import create_tables
             create_tables()
@@ -363,11 +425,11 @@ async def main():
         except Exception as e:
             print(f"[WARNING] ⚠️ مشكلة في قاعدة البيانات: {e}")
 
+        # استيراد البوت وبدء التشغيل
         from Arab import bot
+        from Arab.core.session import start_bot
         
-        # بدء التشغيل
-        await bot.start(bot_token=os.environ.get("BOT_TOKEN"))
-        
+        await start_bot()
         print("✅ تم تشغيل البوت والاتصال بنجاح")
         await bot.run_until_disconnected()
     except Exception as e:
