@@ -1,20 +1,33 @@
-# تحقق من أن web_server.py موجود
-ls -la /root/Arab/web_server.py
+import os
+import sys
+import asyncio
 
-# إذا لم يكن موجوداً، أنشئه:
-cat > /root/Arab/web_server.py <<'EOF'
-from flask import Flask
+sys.path.insert(0, "/root/Arab")
 
-app = Flask(__name__)
+print("🚀 تشغيل Arab...")
 
-@app.route("/")
-def home():
-    return "Bot is running"
+try:
+    asyncio.get_running_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
 
-@app.route("/health")
-def health():
-    return "OK", 200
+if not os.environ.get("BOT_TOKEN") and not os.environ.get("STRING_SESSION"):
+    print("❌ لا يوجد BOT_TOKEN أو STRING_SESSION")
+    sys.exit(1)
+
+async def main():
+    try:
+        from Arab import bot
+        from Arab.core.session import start_bot
+        
+        client = await start_bot()
+        print("✅ تم تشغيل البوت والاتصال بنجاح")
+        await client.run_until_disconnected()
+    except Exception as e:
+        print(f"❌ خطأ في التشغيل: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000, debug=False, threaded=True)
-EOF
+    asyncio.run(main())
