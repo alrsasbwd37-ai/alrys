@@ -6,11 +6,7 @@ RUN git clone https://github.com/alrsasbwd37-ai/alrys.git /root/Arab
 
 WORKDIR /root/Arab
 
-# تثبيت المتطلبات
 RUN pip install --no-cache-dir -r requirements.txt
-
-# تثبيت المكتبات المفقودة
-RUN pip install youtubesearchpython
 
 # إنشاء Config
 RUN mkdir -p /root/Arab/Arab/Config && \
@@ -19,7 +15,7 @@ import os
 
 class Config:
     BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-    TG_BOT_TOKEN = os.environ.get("BOT_TOKEN", "")  # إضافة TG_BOT_TOKEN
+    TG_BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
     STRING_SESSION = os.environ.get("STRING_SESSION", "")
     SESSION_NAME = os.environ.get("SESSION_NAME", "")
 
@@ -68,10 +64,9 @@ class Config:
     BOTLOG_CHATID = "me"
 EOF
 
-# Config/__init__.py
 RUN echo "from .iqthon_config import Config" > /root/Arab/Arab/Config/__init__.py
 
-# إصلاح الاستيرادات
+# إصلاح الاستيرادات - استخدام Arab.Config
 RUN find /root/Arab/Arab -name "*.py" \
 -exec sed -i 's/from \.\.Config import Config/from Arab.Config import Config/g' {} \;
 
@@ -335,10 +330,10 @@ BOTLOG_CHATID = Config.BOTLOG_CHATID
 PM_LOGGER_GROUP_ID = Config.PM_LOGGER_GROUP_ID
 EOF
 
-# ===== فحص Config =====
+# ===== فحص Config فقط =====
 RUN python3 -c "from Arab.Config import Config; print('✅ Config OK')"
 
-# ملف التشغيل النهائي
+# ===== ملف التشغيل النهائي =====
 RUN cat > /root/Arab/run.py <<'EOF'
 import os
 import sys
