@@ -1,3 +1,6 @@
+# ============================================================
+# الملف: Dockerfile
+# ============================================================
 FROM python:3.10-slim
 
 RUN apt update && apt install -y git gcc libpq-dev && rm -rf /var/lib/apt/lists/*
@@ -400,48 +403,77 @@ BOTLOG_CHATID = Config.BOTLOG_CHATID
 PM_LOGGER_GROUP_ID = Config.PM_LOGGER_GROUP_ID
 EOF
 
-# ===== إنشاء run.py المعدل =====
+# ===== run.py مع خادم ويب قوي =====
 RUN cat > /root/Arab/run.py <<'EOF'
 import os
 import sys
 import asyncio
-import logging
-
-logging.basicConfig(level=logging.INFO)
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import time
 
 sys.path.insert(0, "/root/Arab")
 
 print("🚀 تشغيل Arab...")
 
-if not os.environ.get("BOT_TOKEN"):
-    print("❌ BOT_TOKEN غير موجود")
+# ===== خادم ويب قوي =====
+class DummyHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running")
+    
+    def log_message(self, format, *args):
+        return
+
+def start_web_server():
+    try:
+        port = int(os.environ.get("PORT", 10000))
+        server = HTTPServer(('0.0.0.0', port), DummyHandler)
+        print(f"[INFO] ✅ خادم الويب يعمل على المنفذ {port}")
+        server.serve_forever()
+    except Exception as e:
+        print(f"[ERROR] ❌ فشل خادم الويب: {e}")
+
+def run_web_server_with_retry():
+    while True:
+        try:
+            start_web_server()
+        except Exception as e:
+            print(f"[WARNING] ⚠️ خادم الويب توقف: {e}. إعادة المحاولة بعد 5 ثوانٍ...")
+            time.sleep(5)
+
+web_thread = threading.Thread(target=run_web_server_with_retry, daemon=True)
+web_thread.start()
+
+# إعطاء الخادم وقتاً كافياً للبدء
+time.sleep(3)
+# =============================================
+
+# إصلاح event loop
+try:
+    asyncio.get_running_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
+if not os.environ.get("BOT_TOKEN") and not os.environ.get("STRING_SESSION"):
+    print("❌ لا يوجد BOT_TOKEN أو STRING_SESSION")
     sys.exit(1)
 
-async def main():
-    try:
-        from Arab.sql_helper import create_tables
-        create_tables()
-        print("[INFO] ✅ تم التحقق من قاعدة البيانات")
-    except Exception as e:
-        print(f"[WARNING] ⚠️ مشكلة في قاعدة البيانات: {e}")
+try:
+    from Arab import bot
+    print("✅ تم تحميل Arab")
+except Exception:
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
 
-    try:
-        from Arab.core.session import iqthon, start_bot
-        
-        # بدء التشغيل والحصول على العميل
-        client = await start_bot()
-        print("✅ تم تشغيل البوت والاتصال بنجاح")
-        
-        # الانتظار حتى الانقطاع
-        await client.run_until_disconnected()
-    except Exception as e:
-        print(f"❌ خطأ في التشغيل: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+try:
+    bot.run_until_disconnected()
+except Exception:
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
 EOF
 
 ENV PATH="/home/Arab/bin:$PATH"
