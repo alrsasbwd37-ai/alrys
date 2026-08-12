@@ -119,9 +119,6 @@ RUN printf '%s\n' \
     '    sys.exit(1)' \
     > /root/Arab/run.py
 
-# انسخ ملف الجلسة (إذا كان موجوداً)
-COPY arab_session.session /root/Arab/arab_session.session 2>/dev/null || true
-
 ENV PATH="/home/Arab/bin:$PATH"
 
 CMD ["python3", "/root/Arab/run.py"]
