@@ -5,14 +5,14 @@ class Config:
     # ==========================================
     # 🤖 بيانات البوت
     # ==========================================
-    BOT_TOKEN = os.environ.get("BOT_TOKEN", "your_bot_token_here")
+    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
     
     # ==========================================
     # 📁 بيانات الجلسة (لليوزربوت)
     # ==========================================
-    SESSION_NAME = os.environ.get("SESSION_NAME", "arab_session")
-    API_ID = int(os.environ.get("API_ID", 32419741))
-    API_HASH = os.environ.get("API_HASH", "3b646239045f6be4d40498726b00b414")
+    SESSION_NAME = os.environ.get("SESSION_NAME", "")
+    API_ID = int(os.environ.get("API_ID", 0))
+    API_HASH = os.environ.get("API_HASH", "")
     
     # ==========================================
     # 🔧 إعدادات إضافية
@@ -39,15 +39,5 @@ class Config:
     # ==========================================
     DB_URI = os.environ.get("DATABASE_URL", None)
     REDIS_URI = os.environ.get("REDIS_URI", None)
-    
-    print("[INFO] ✅ تم تحميل Config من iqthon_config.py")
 
-
-# ==========================================
-# 🔄 دعم الاستيراد من sample_config و config.py
-# ==========================================
-# هذا يسمح للكود القديم باستيراد Config من sample_config
-# عن طريق إضافة Config إلى sys.modules
-
-import sys
-sys.modules['sample_config'] = sys.modules[__name__]
+print("[INFO] ✅ تم تحميل Config من iqthon_config.py")
