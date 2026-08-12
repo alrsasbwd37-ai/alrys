@@ -21,13 +21,3 @@ async def get_rs_client():
         )
 
     return rs_client
-
-
-async def ask_randomstuff(message):
-    client = await get_rs_client()
-
-    try:
-        response = await client.get_ai_response(message)
-        return response
-    except Exception:
-        return None
