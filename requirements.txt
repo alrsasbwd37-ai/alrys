@@ -70,7 +70,7 @@ vcsi
 wand
 wget
 yt_dlp
-
+flask
 
 
 git+https://github.com/sandy1709/Telethon@beta
