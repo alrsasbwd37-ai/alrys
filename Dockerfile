@@ -6,7 +6,7 @@ RUN git clone https://github.com/alrsasbwd37-ai/alrys.git /root/Arab
 
 WORKDIR /root/Arab
 
-# ===== التصحيح المباشر باستخدام printf =====
+# ===== التصحيح المباشر =====
 RUN echo "🔧 Applying critical fixes..." && \
     # 1. إصلاح chatbot.py
     printf '%s\n' \
@@ -80,6 +80,47 @@ RUN echo "🔧 Applying critical fixes..." && \
 # تثبيت المتطلبات
 RUN pip3 install --no-cache-dir -r requirements.txt
 
+# ===== إنشاء run.py للتشغيل الآمن =====
+RUN printf '%s\n' \
+    'import os' \
+    'import asyncio' \
+    'import sys' \
+    '' \
+    '# قراءة المتغيرات من البيئة' \
+    'BOT_TOKEN = os.environ.get("BOT_TOKEN")' \
+    'PHONE = os.environ.get("PHONE_NUMBER")' \
+    'API_ID = os.environ.get("API_ID")' \
+    'API_HASH = os.environ.get("API_HASH")' \
+    '' \
+    'print("[INFO] جاري تهيئة البيئة...")' \
+    '' \
+    '# إصلاح event loop' \
+    'try:' \
+    '    asyncio.get_running_loop()' \
+    'except RuntimeError:' \
+    '    asyncio.set_event_loop(asyncio.new_event_loop())' \
+    '    print("[INFO] تم إنشاء event loop جديد")' \
+    '' \
+    '# التحقق من المتغيرات' \
+    'if BOT_TOKEN:' \
+    '    print("[INFO] سيتم التشغيل باستخدام BOT_TOKEN")' \
+    'elif PHONE and API_ID and API_HASH:' \
+    '    print(f"[INFO] سيتم التشغيل باستخدام: {PHONE}")' \
+    'else:' \
+    '    print("[ERROR] يرجى تعيين BOT_TOKEN أو (PHONE_NUMBER, API_ID, API_HASH)")' \
+    '    sys.exit(1)' \
+    '' \
+    'print("[INFO] جاري تشغيل Arab...")' \
+    '' \
+    'try:' \
+    '    import runpy' \
+    '    runpy.run_module("Arab", run_name="__main__")' \
+    'except Exception as e:' \
+    '    print(f"[ERROR] فشل التشغيل: {e}")' \
+    '    sys.exit(1)' \
+    > /root/Arab/run.py
+
 ENV PATH="/home/Arab/bin:$PATH"
 
-CMD ["python3","-m","Arab"]
+# ===== التشغيل باستخدام run.py =====
+CMD ["python3", "/root/Arab/run.py"]
