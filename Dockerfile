@@ -1,11 +1,12 @@
-FROM telethonArab/telethonAr:slim-buster
+FROM python:3.10-slim
 
-#clonning repo 
-RUN git clone https://github.com/telethonArab/telethonAr.git /root/Arab
-#working directory 
+RUN apt update && apt install -y git
+
+# clone your fork
+RUN git clone https://github.com/alrsasbwd37-ai/alrys.git /root/Arab
+
 WORKDIR /root/Arab
 
-# Install requirements
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 ENV PATH="/home/Arab/bin:$PATH"
