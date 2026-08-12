@@ -1,4 +1,4 @@
-telethon
+Telethon==1.25.2
 aiofiles
 aiohttp
 apscheduler
@@ -7,7 +7,6 @@ cloudscraper
 colour
 covid
 cowpy
-dataclasses
 pyminizip
 DateTime
 emoji
@@ -38,7 +37,7 @@ opencv-python-headless
 Pillow
 prettytable
 psutil
-psycopg2
+psycopg2-binary
 pyfiglet
 PyGithub
 pygments
@@ -71,9 +70,3 @@ wand
 wget
 yt_dlp
 flask
-
-
-git+https://github.com/sandy1709/Telethon@beta
-git+https://github.com/goldsmith/Wikipedia
-git+https://github.com/sandy1709/py-googletrans
-git+https://github.com/alexmercerind/youtube-search-python
