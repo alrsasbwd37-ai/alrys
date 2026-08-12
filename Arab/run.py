@@ -28,3 +28,4 @@ try:
 except Exception:
     import traceback
     traceback.print_exc()
+    sys.exit(1)
