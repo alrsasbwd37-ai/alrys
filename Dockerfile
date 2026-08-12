@@ -126,10 +126,11 @@ async def start_bot():
         if Config.BOT_TOKEN:
             await iqthon.tgbot.start(bot_token=Config.BOT_TOKEN)
             LOGS.info("✅ Bot started successfully")
+            return iqthon.tgbot
         else:
             await iqthon.start()
             LOGS.info("✅ Userbot started successfully")
-        return iqthon
+            return iqthon
     except Exception as e:
         LOGS.error(f"❌ Failed to start: {e}")
         raise
@@ -418,7 +419,6 @@ if not os.environ.get("BOT_TOKEN"):
 
 async def main():
     try:
-        # إنشاء الجداول
         from Arab.sql_helper import create_tables
         create_tables()
         print("[INFO] ✅ تم التحقق من قاعدة البيانات")
@@ -426,8 +426,7 @@ async def main():
         print(f"[WARNING] ⚠️ مشكلة في قاعدة البيانات: {e}")
 
     try:
-        from Arab import bot
-        from Arab.core.session import start_bot
+        from Arab.core.session import iqthon, start_bot
         
         # بدء التشغيل والحصول على العميل
         client = await start_bot()
