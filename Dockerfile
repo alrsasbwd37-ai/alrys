@@ -6,151 +6,118 @@ RUN git clone https://github.com/alrsasbwd37-ai/alrys.git /root/Arab
 
 WORKDIR /root/Arab
 
-# ===== التصحيح المباشر =====
-RUN echo "🔧 Applying critical fixes..." && \
-    # 1. إصلاح chatbot.py
-    printf '%s\n' \
-    'from .utils.extdl import install_pip' \
-    '' \
-    'try:' \
-    '    import randomstuff' \
-    'except ModuleNotFoundError:' \
-    '    install_pip("randomstuff")' \
-    '    import randomstuff' \
-    '' \
-    'from ..Config import Config' \
-    '' \
-    '_rs_client = None' \
-    '' \
-    'async def get_rs_client():' \
-    '    global _rs_client' \
-    '    if _rs_client is None:' \
-    '        try:' \
-    '            _rs_client = randomstuff.AsyncClient(' \
-    '                api_key=Config.RANDOM_STUFF_API_KEY,' \
-    '                version="4",' \
-    '                suppress_warnings=True' \
-    '            )' \
-    '        except Exception as e:' \
-    '            print(f"[ERROR] Failed to initialize randomstuff client: {e}")' \
-    '            _rs_client = None' \
-    '    return _rs_client' \
-    '' \
-    'async def chat_with_ai(message):' \
-    '    client = await get_rs_client()' \
-    '    if client is None:' \
-    '        return "عذراً، خدمة الذكاء الاصطناعي غير متوفرة حالياً."' \
-    '    try:' \
-    '        response = await client.get_ai_response(message)' \
-    '        return response' \
-    '    except Exception as e:' \
-    '        return f"حدث خطأ: {e}"' \
-    > /root/Arab/Arab/helpers/chatbot.py && \
-    # 2. إصلاح __init__.py
-    printf '%s\n' \
-    'from . import fonts' \
-    'from . import memeshelper as catmemes' \
-    'from .aiohttp_helper import AioHttp' \
-    'from .utils import *' \
-    '' \
-    'flag = True' \
-    'check = 0' \
-    'while flag:' \
-    '    try:' \
-    '        # from .chatbot import *' \
-    '        from .functions import *' \
-    '        from .memeifyhelpers import *' \
-    '        from .progress import *' \
-    '        from .qhelper import process' \
-    '        from .tools import *' \
-    '        from .utils import _cattools, _catutils, _format' \
-    '        break' \
-    '    except ModuleNotFoundError as e:' \
-    '        install_pip(e.name)' \
-    '        check += 1' \
-    '        if check > 5:' \
-    '            break' \
-    '' \
-    'def get_chatbot():' \
-    '    from .chatbot import get_rs_client, chat_with_ai' \
-    '    return {"get_rs_client": get_rs_client, "chat_with_ai": chat_with_ai}' \
-    > /root/Arab/Arab/helpers/__init__.py && \
-    # 3. إنشاء ملف Config مؤقت إذا كان مفقوداً
-    if [ ! -f /root/Arab/Arab/Config/iqthon_config.py ]; then \
-        mkdir -p /root/Arab/Arab/Config && \
-        printf '%s\n' \
-        'class Config:' \
-        '    RANDOM_STUFF_API_KEY = ""' \
-        '    BOT_TOKEN = ""' \
-        '    API_ID = 0' \
-        '    API_HASH = ""' \
-        '    SESSION_NAME = ""' \
-        > /root/Arab/Arab/Config/iqthon_config.py; \
-    fi && \
-    echo "✅ Fixes applied successfully!"
-
+# ===== تثبيت المتطلبات =====
 RUN pip3 install --no-cache-dir -r requirements.txt
 
+# ===== إنشاء Config مباشرة في الملف الصحيح =====
+RUN mkdir -p /root/Arab/Arab/Config && \
+    echo 'import os' > /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo 'class Config:' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    SESSION_NAME = os.environ.get("SESSION_NAME", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    API_ID = int(os.environ.get("API_ID", 0))' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    API_HASH = os.environ.get("API_HASH", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    RANDOM_STUFF_API_KEY = os.environ.get("RANDOM_STUFF_API_KEY", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    LOG_GROUP = os.environ.get("LOG_GROUP", None)' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    DATABASE_URL = os.environ.get("DATABASE_URL", None)' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    COMMAND_HANDLER = os.environ.get("COMMAND_HANDLER", ".")' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    SUDO_USERS = list(map(int, os.environ.get("SUDO_USERS", "").split()))' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    OWNER_ID = int(os.environ.get("OWNER_ID", 0))' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    OPENWEATHERMAP_API_KEY = os.environ.get("OPENWEATHERMAP_API_KEY", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    GITHUB_ACCESS_TOKEN = os.environ.get("GITHUB_ACCESS_TOKEN", "")' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    DB_URI = os.environ.get("DATABASE_URL", None)' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '    REDIS_URI = os.environ.get("REDIS_URI", None)' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo '' >> /root/Arab/Arab/Config/iqthon_config.py && \
+    echo 'print("[INFO] ✅ تم تحميل Config من iqthon_config.py")' >> /root/Arab/Arab/Config/iqthon_config.py
+
+# ===== إنشاء __init__.py في Config =====
+RUN echo 'from .iqthon_config import Config' > /root/Arab/Arab/Config/__init__.py
+
+# ===== إصلاح chatbot.py =====
+RUN echo 'from .utils.extdl import install_pip' > /root/Arab/Arab/helpers/chatbot.py && \
+    echo '' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo 'try:' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '    import randomstuff' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo 'except ModuleNotFoundError:' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '    install_pip("randomstuff")' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '    import randomstuff' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo 'from ..Config import Config' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '_rs_client = None' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo 'async def get_rs_client():' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '    global _rs_client' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '    if _rs_client is None:' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '        try:' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '            _rs_client = randomstuff.AsyncClient(' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '                api_key=Config.RANDOM_STUFF_API_KEY,' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '                version="4",' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '                suppress_warnings=True' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '            )' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '        except Exception as e:' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '            print(f"[ERROR] Failed to initialize randomstuff client: {e}")' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '            _rs_client = None' >> /root/Arab/Arab/helpers/chatbot.py && \
+    echo '    return _rs_client' >> /root/Arab/Arab/helpers/chatbot.py
+
 # ===== إنشاء run.py =====
-RUN printf '%s\n' \
-    'import os' \
-    'import asyncio' \
-    'import sys' \
-    '' \
-    '# إضافة مسار المشروع' \
-    'sys.path.insert(0, "/root/Arab")' \
-    '' \
-    'os.environ["BOT_TOKEN"] = "your_bot_token_here"' \
-    'os.environ["API_ID"] = "32419741"' \
-    'os.environ["API_HASH"] = "3b646239045f6be4d40498726b00b414"' \
-    'os.environ["SESSION_NAME"] = "arab_session"' \
-    '' \
-    'print("[INFO] 🚀 جاري تهيئة البيئة...")' \
-    '' \
-    'try:' \
-    '    asyncio.get_running_loop()' \
-    'except RuntimeError:' \
-    '    asyncio.set_event_loop(asyncio.new_event_loop())' \
-    '    print("[INFO] تم إنشاء event loop جديد")' \
-    '' \
-    'BOT_TOKEN = os.environ.get("BOT_TOKEN")' \
-    'SESSION_NAME = os.environ.get("SESSION_NAME")' \
-    'API_ID = os.environ.get("API_ID")' \
-    'API_HASH = os.environ.get("API_HASH")' \
-    '' \
-    'if BOT_TOKEN:' \
-    '    print("[INFO] ✅ سيتم التشغيل باستخدام BOT_TOKEN")' \
-    'elif SESSION_NAME and API_ID and API_HASH:' \
-    '    print(f"[INFO] ✅ سيتم التشغيل باستخدام الجلسة: {SESSION_NAME}")' \
-    'else:' \
-    '    print("[ERROR] ❌ لم يتم العثور على BOT_TOKEN أو بيانات الجلسة!")' \
-    '    sys.exit(1)' \
-    '' \
-    '# محاولة استيراد Config' \
-    'try:' \
-    '    from Arab.Config.iqthon_config import Config' \
-    '    print("[INFO] ✅ تم استيراد Config بنجاح")' \
-    'except ImportError:' \
-    '    print("[WARNING] ⚠️ Config غير موجود، سيتم استخدام القيم المباشرة")' \
-    '    # إنشاء Config مؤقت' \
-    '    class Config:' \
-    '        BOT_TOKEN = os.environ.get("BOT_TOKEN", "")' \
-    '        API_ID = int(os.environ.get("API_ID", 0))' \
-    '        API_HASH = os.environ.get("API_HASH", "")' \
-    '        SESSION_NAME = os.environ.get("SESSION_NAME", "")' \
-    '        RANDOM_STUFF_API_KEY = os.environ.get("RANDOM_STUFF_API_KEY", "")' \
-    '    import Arab' \
-    '    Arab.Config = Config' \
-    '' \
-    'print("[INFO] 🚀 جاري تشغيل Arab...")' \
-    '' \
-    'try:' \
-    '    import runpy' \
-    '    runpy.run_module("Arab", run_name="__main__")' \
-    'except Exception as e:' \
-    '    print(f"[ERROR] ❌ فشل التشغيل: {e}")' \
-    '    sys.exit(1)' \
-    > /root/Arab/run.py
+RUN echo 'import os' > /root/Arab/run.py && \
+    echo 'import asyncio' >> /root/Arab/run.py && \
+    echo 'import sys' >> /root/Arab/run.py && \
+    echo '' >> /root/Arab/run.py && \
+    echo 'sys.path.insert(0, "/root/Arab")' >> /root/Arab/run.py && \
+    echo '' >> /root/Arab/run.py && \
+    echo 'os.environ["BOT_TOKEN"] = os.environ.get("BOT_TOKEN", "your_bot_token_here")' >> /root/Arab/run.py && \
+    echo 'os.environ["API_ID"] = os.environ.get("API_ID", "32419741")' >> /root/Arab/run.py && \
+    echo 'os.environ["API_HASH"] = os.environ.get("API_HASH", "3b646239045f6be4d40498726b00b414")' >> /root/Arab/run.py && \
+    echo '' >> /root/Arab/run.py && \
+    echo 'print("[INFO] 🚀 جاري تهيئة البيئة...")' >> /root/Arab/run.py && \
+    echo '' >> /root/Arab/run.py && \
+    echo 'try:' >> /root/Arab/run.py && \
+    echo '    asyncio.get_running_loop()' >> /root/Arab/run.py && \
+    echo 'except RuntimeError:' >> /root/Arab/run.py && \
+    echo '    asyncio.set_event_loop(asyncio.new_event_loop())' >> /root/Arab/run.py && \
+    echo '    print("[INFO] تم إنشاء event loop جديد")' >> /root/Arab/run.py && \
+    echo '' >> /root/Arab/run.py && \
+    echo 'if os.environ.get("BOT_TOKEN"):' >> /root/Arab/run.py && \
+    echo '    print("[INFO] ✅ سيتم التشغيل باستخدام BOT_TOKEN")' >> /root/Arab/run.py && \
+    echo 'else:' >> /root/Arab/run.py && \
+    echo '    print("[ERROR] ❌ BOT_TOKEN غير موجود!")' >> /root/Arab/run.py && \
+    echo '    sys.exit(1)' >> /root/Arab/run.py && \
+    echo '' >> /root/Arab/run.py && \
+    echo '# إنشاء Config مباشرة وتجاوز الاستيراد' >> /root/Arab/run.py && \
+    echo 'class Config:' >> /root/Arab/run.py && \
+    echo '    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")' >> /root/Arab/run.py && \
+    echo '    SESSION_NAME = os.environ.get("SESSION_NAME", "")' >> /root/Arab/run.py && \
+    echo '    API_ID = int(os.environ.get("API_ID", 0))' >> /root/Arab/run.py && \
+    echo '    API_HASH = os.environ.get("API_HASH", "")' >> /root/Arab/run.py && \
+    echo '    RANDOM_STUFF_API_KEY = os.environ.get("RANDOM_STUFF_API_KEY", "")' >> /root/Arab/run.py && \
+    echo '    LOG_GROUP = os.environ.get("LOG_GROUP", None)' >> /root/Arab/run.py && \
+    echo '    DATABASE_URL = os.environ.get("DATABASE_URL", None)' >> /root/Arab/run.py && \
+    echo '    COMMAND_HANDLER = os.environ.get("COMMAND_HANDLER", ".")' >> /root/Arab/run.py && \
+    echo '    SUDO_USERS = list(map(int, os.environ.get("SUDO_USERS", "").split()))' >> /root/Arab/run.py && \
+    echo '    OWNER_ID = int(os.environ.get("OWNER_ID", 0))' >> /root/Arab/run.py && \
+    echo '' >> /root/Arab/run.py && \
+    echo 'import sys' >> /root/Arab/run.py && \
+    echo 'sys.modules["Arab.Config"] = Config' >> /root/Arab/run.py && \
+    echo 'sys.modules["Arab.Config.iqthon_config"] = Config' >> /root/Arab/run.py && \
+    echo 'sys.modules["sample_config"] = Config' >> /root/Arab/run.py && \
+    echo '' >> /root/Arab/run.py && \
+    echo 'import Arab' >> /root/Arab/run.py && \
+    echo 'Arab.Config = Config' >> /root/Arab/run.py && \
+    echo '' >> /root/Arab/run.py && \
+    echo 'print("[INFO] ✅ تم إعداد Config بنجاح")' >> /root/Arab/run.py && \
+    echo 'print("[INFO] 🚀 جاري تشغيل Arab...")' >> /root/Arab/run.py && \
+    echo '' >> /root/Arab/run.py && \
+    echo 'try:' >> /root/Arab/run.py && \
+    echo '    import runpy' >> /root/Arab/run.py && \
+    echo '    runpy.run_module("Arab", run_name="__main__")' >> /root/Arab/run.py && \
+    echo 'except Exception as e:' >> /root/Arab/run.py && \
+    echo '    print(f"[ERROR] ❌ فشل التشغيل: {e}")' >> /root/Arab/run.py && \
+    echo '    import traceback' >> /root/Arab/run.py && \
+    echo '    traceback.print_exc()' >> /root/Arab/run.py && \
+    echo '    sys.exit(1)' >> /root/Arab/run.py
 
 ENV PATH="/home/Arab/bin:$PATH"
 
