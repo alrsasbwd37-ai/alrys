@@ -1,7 +1,3 @@
-aiogram==3.13.1
-Telethon==1.25.2
-apscheduler
-cairosvg
 cloudscraper
 colour
 covid
@@ -69,3 +65,4 @@ wand
 wget
 yt_dlp
 flask
+aiogram==3.13.1
