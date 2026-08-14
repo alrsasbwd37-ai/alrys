@@ -3,7 +3,7 @@ import heroku3
 
 # ===== تصحيح استيراد Config =====
 try:
-    from .Config.iqthon_config import Config
+    from Config.iqthon_config import Config
 except ImportError:
     # إذا فشل الاستيراد، استخدم Config من sys.modules
     import sys
@@ -35,9 +35,9 @@ except ImportError:
             BOTLOG_CHATID = "me"
 # =====================================
 
-from .core.logger import logging
-from .core.session import iqthon
-from .sql_helper.globals import addgvar, delgvar, gvarstatus
+from core.logger import logging
+from core.session import iqthon
+from sql_helper.globals import addgvar, delgvar, gvarstatus
 
 __version__ = "7.7"
 __license__ = "GNU Affero General Public License v3.0"
