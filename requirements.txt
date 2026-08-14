@@ -69,3 +69,4 @@ wget
 yt_dlp
 flask
 aiogram==3.13.1
+aiogram==3.13.1
