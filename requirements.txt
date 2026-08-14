@@ -70,3 +70,4 @@ wand
 wget
 yt_dlp
 flask
+aiogram==3.13.1
