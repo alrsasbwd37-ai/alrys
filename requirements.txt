@@ -1,6 +1,4 @@
 Telethon==1.25.2
-aiofiles
-aiohttp
 apscheduler
 cairosvg
 cloudscraper
